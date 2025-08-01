@@ -1,0 +1,152 @@
+{
+  "name": "AI Embedded Engineer Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "customer-idea",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "name": "Customer Input Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "prompt": "You received this customer request: {{$json[\"body\"]}}. Confirm the idea by replying: 'This is what you want: ...?' and summarize the project idea.",
+        "temperature": 0.7
+      },
+      "name": "Confirm Idea with AI",
+      "type": "n8n-nodes-base.openai",
+      "typeVersion": 1,
+      "position": [
+        400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "prompt": "Based on this project idea: {{$json[\"choices\"][0][\"text\"]}}, generate Python code for Raspberry Pi to implement it. Include GPIO setup and logic.",
+        "temperature": 0.7
+      },
+      "name": "Generate Raspberry Pi Code",
+      "type": "n8n-nodes-base.openai",
+      "typeVersion": 1,
+      "position": [
+        600,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "prompt": "Based on this project idea: {{$json[\"choices\"][0][\"text\"]}}, generate a shopping list of components needed to build it using Raspberry Pi. Include quantities and specifications.",
+        "temperature": 0.7
+      },
+      "name": "Generate Shopping List",
+      "type": "n8n-nodes-base.openai",
+      "typeVersion": 1,
+      "position": [
+        600,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "prompt": "You are an engineer. Please validate the following Raspberry Pi project code and shopping list. Code: {{$node[\"Generate Raspberry Pi Code\"].json[\"choices\"][0][\"text\"]}} Shopping List: {{$node[\"Generate Shopping List\"].json[\"choices\"][0][\"text\"]}}. Provide feedback or approval.",
+        "temperature": 0.7
+      },
+      "name": "Engineer Validation",
+      "type": "n8n-nodes-base.openai",
+      "typeVersion": 1,
+      "position": [
+        800,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "options": {},
+        "subject": "Embedded Project Validation",
+        "text": "Here is the project summary and validation:\n{{$node[\"Engineer Validation\"].json[\"choices\"][0][\"text\"]}}",
+        "toEmail": "engineer@example.com"
+      },
+      "name": "Send Email to Engineer",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Customer Input Webhook": {
+      "main": [
+        [
+          {
+            "node": "Confirm Idea with AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirm Idea with AI": {
+      "main": [
+        [
+          {
+            "node": "Generate Raspberry Pi Code",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate Shopping List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Raspberry Pi Code": {
+      "main": [
+        [
+          {
+            "node": "Engineer Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Shopping List": {
+      "main": [
+        [
+          {
+            "node": "Engineer Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Engineer Validation": {
+      "main": [
+        [
+          {
+            "node": "Send Email to Engineer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
